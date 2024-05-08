@@ -3,7 +3,7 @@ const input = document.querySelector('#input');
 const errorSpan = document.querySelector('#error');
 const resultsContainer = document.querySelector('#results');
 
-const endpoint = 'https://en.wikipedia.org/w/api.php?';
+const endpoint = 'https://www.mediawiki.org/w/api.php?';
 const params = {
     origin: '*',
     format: 'json',
