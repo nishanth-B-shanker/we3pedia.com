@@ -1,97 +1,55 @@
-const submitButton = document.querySelector('#submit');
-const input = document.querySelector('#input');
-const errorSpan = document.querySelector('#error');
-const resultsContainer = document.querySelector('#results');
+const form = document.querySelector("form")
+const search = document.querySelector("input")
+const searchResult = document.querySelector(".results")
 
-const endpoint = 'https://en.wikipedia.org/w/api.php?';
-const params = {
-    origin: '*',
-    format: 'json',
-    action: 'query',
-    prop: 'extracts',
-    exchars: 250,
-    exintro: true,
-    explaintext: true,
-    generator: 'search',
-    gsrlimit: 20,
-};
+const apiUrl = "https://en.wikipedia.org/w/api.php?action=query&list=search&prop=info&inprop=url&utf8=&format=json&origin=*&srlimit=20&srsearch="
 
-const disableUi = () => {
-    input.disabled = true;
-    submitButton.disabled = true;
-};
 
-const enableUi = () => {
-    input.disabled = false;
-    submitButton.disabled = false;
-};
+form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    var searchvalue = search.value;
 
-const clearPreviousResults = () => {
-    resultsContainer.innerHTML = '';
-    errorSpan.innerHTML = '';
-};
+    if (searchvalue === "") {
+        alert("Search is empty");
+        document.getElementById("results").style.visibility = "hidden";
+    }
 
-const isInputEmpty = input => {
-    if (!input || input === '') return true;
-    return false;
-};
+    else {
+        getResult(searchvalue);
+    }
+})
 
-const showError = error => {
-    errorSpan.innerHTML = `🚨 ${error} 🚨`;
-};
 
-const showResults = results => {
-    results.forEach(result => {
-        resultsContainer.innerHTML += `
-        <div class="results__item">
-            <a href="https://en.wikipedia.org/?curid=${result.pageId}" target="_blank" class="card animated bounceInUp">
-                <h2 class="results__item__title">${result.title}</h2>
-                <p class="results__item__intro">${result.intro}</p>
+async function getResult(searchval) {
+    const response = await fetch(apiUrl + searchval);
+    const result = await response.json();
+    if (result.query.search.length == 0) {
+        alert("Not found!!");
+        search.value = "";
+    }
+    else {
+        displayResult(result);
+        search.value = searchval;
+    }
+}
+
+function displayResult(results) {
+    var printValue = "";
+
+    results.query.search.forEach((e) => {
+        var resultUrl = `https://en.wikipedia.org/?curid=${e.pageid}`
+        document.getElementById("results").style.visibility = "visible";
+        printValue +=
+            `
+        <div class="result">
+            <a href=${resultUrl} target="__blank" style="text-decoration:none;">
+                <div class="heading">${e.title}</div>
+                <div class="context">${e.snippet}</div>
+                <div class="time">Time: ${e.timestamp}</div>
             </a>
         </div>
-    `;
-    });
-};
+        `
+        searchResult.innerHTML = printValue
+    })
 
-const gatherData = pages => {
-    const results = Object.values(pages).map(page => ({
-        pageId: page.pageid,
-        title: page.title,
-        intro: page.extract,
-    }));
-
-    showResults(results);
-};
-
-const getData = async () => {
-    const userInput = input.value;
-    if (isInputEmpty(userInput)) return;
-
-    params.gsrsearch = userInput;
-    clearPreviousResults();
-    disableUi();
-
-    try {
-        const { data } = await axios.get(endpoint, { params });
-
-        if (data.error) throw new Error(data.error.info);
-        gatherData(data.query.pages);
-    } catch (error) {
-        showError(error);
-    } finally {
-        enableUi();
-    }
-};
-
-const handleKeyEvent = e => {
-    if (e.key === 'Enter') {
-        getData();
-    }
-};
-
-const registerEventHandlers = () => {
-    input.addEventListener('keydown', handleKeyEvent);
-    submitButton.addEventListener('click', getData);
-};
-
-registerEventHandlers();
+}
